@@ -49,71 +49,75 @@ namespace brainfuck
 
     void CodeGenerator::operator()(IncrAST const &)
     {
-        auto posValue = irBuilder_->CreateLoad(ptrType_, posMem_);
-        auto oldValue = irBuilder_->CreateLoad(byteType_, posValue);
-        auto newValue = irBuilder_->CreateAdd(oldValue, one_);
+        auto posValue = irBuilder_->CreateLoad(ptrType_, posMem_, "incrPos");
+        auto oldValue = irBuilder_->CreateLoad(byteType_, posValue, "incrVal");
+        auto newValue = irBuilder_->CreateAdd(oldValue, one_, "incrAdd");
         irBuilder_->CreateStore(newValue, posValue);
     }
 
     void CodeGenerator::operator()(DecrAST const &)
     {
-        auto posValue = irBuilder_->CreateLoad(ptrType_, posMem_);
-        auto oldValue = irBuilder_->CreateLoad(byteType_, posValue);
-        auto newValue = irBuilder_->CreateSub(oldValue, one_);
+        auto posValue = irBuilder_->CreateLoad(ptrType_, posMem_, "decrPos");
+        auto oldValue = irBuilder_->CreateLoad(byteType_, posValue, "decrVal");
+        auto newValue = irBuilder_->CreateSub(oldValue, one_, "decrSub");
         irBuilder_->CreateStore(newValue, posValue);
     }
 
     void CodeGenerator::operator()(LeftAST const &)
     {
-        auto oldPosValue = irBuilder_->CreateLoad(ptrType_, posMem_);
-        auto newPosValue = irBuilder_->CreateSub(oldPosValue, one_);
+        auto oldPosValue = irBuilder_->CreateLoad(ptrType_, posMem_, "leftPos");
+        auto newPosValue = irBuilder_->CreateSub(oldPosValue, one_, "leftMove");
         irBuilder_->CreateStore(newPosValue, posMem_);
     }
 
     void CodeGenerator::operator()(RightAST const &)
     {
-        auto oldPosValue = irBuilder_->CreateLoad(ptrType_, posMem_);
-        auto newPosValue = irBuilder_->CreateAdd(oldPosValue, one_);
+        auto oldPosValue = irBuilder_->CreateLoad(ptrType_, posMem_, "rightPos");
+        auto newPosValue = irBuilder_->CreateAdd(oldPosValue, one_, "rightMove");
         irBuilder_->CreateStore(newPosValue, posMem_);
     }
 
     void CodeGenerator::operator()(WriteAST const &)
     {
-        auto posValue = irBuilder_->CreateLoad(ptrType_, posMem_);
-        auto dataValue = irBuilder_->CreateLoad(byteType_, posValue);
-        auto dataInt = irBuilder_->CreateCast(llvm::CastInst::ZExt, dataValue, intType_);
-        irBuilder_->CreateCall(putcharFunc_, dataInt);
+        auto posValue = irBuilder_->CreateLoad(ptrType_, posMem_, "writePos");
+        auto dataValue = irBuilder_->CreateLoad(byteType_, posValue, "writeVal");
+        auto dataInt = irBuilder_->CreateCast(llvm::CastInst::ZExt, dataValue, intType_, "writeCast");
+        irBuilder_->CreateCall(putcharFunc_, dataInt, "writeCall");
     }
 
     void CodeGenerator::operator()(ReadAST const &)
     {
-        auto readValue = irBuilder_->CreateCall(getcharFunc_);
-        auto posValue = irBuilder_->CreateLoad(ptrType_, posMem_);
+        auto readValue = irBuilder_->CreateCall(getcharFunc_, llvm::None, "readCall");
+        auto posValue = irBuilder_->CreateLoad(ptrType_, posMem_, "readPos");
         irBuilder_->CreateStore(readValue, posValue);
     }
 
     void CodeGenerator::operator()(LoopAST const &ast)
     {
-        auto loopBB = llvm::BasicBlock::Create(*llvmContext_, "loop", mainFunc_);
-        auto afterBB = llvm::BasicBlock::Create(*llvmContext_, "afterLoop", mainFunc_);
+        auto headBB = llvm::BasicBlock::Create(*llvmContext_, "headBlock", mainFunc_);
+        auto bodyBB = llvm::BasicBlock::Create(*llvmContext_, "bodyBlock", mainFunc_);
+        auto afterBB = llvm::BasicBlock::Create(*llvmContext_, "contBlock", mainFunc_);
 
-        irBuilder_->CreateBr(loopBB);
-        irBuilder_->SetInsertPoint(loopBB);
+        irBuilder_->CreateBr(headBB);
+        irBuilder_->SetInsertPoint(headBB);
 
-        auto posValue = irBuilder_->CreateLoad(ptrType_, posMem_, "loadPos");
-        auto dataValue = irBuilder_->CreateLoad(byteType_, posValue, "loadData");
+        auto posValue = irBuilder_->CreateLoad(ptrType_, posMem_, "loopPos");
+        auto dataValue = irBuilder_->CreateLoad(byteType_, posValue, "loopData");
         auto loopCondition = irBuilder_->CreateICmpEQ(dataValue, zero_, "loopCond");
 
-        irBuilder_->CreateCondBr(loopCondition, afterBB, loopBB);
+        irBuilder_->CreateCondBr(loopCondition, afterBB, bodyBB);
+        irBuilder_->SetInsertPoint(bodyBB);
 
         (*this)(ast.loopBody());
 
-        irBuilder_->CreateBr(loopBB);
+        irBuilder_->CreateBr(headBB);
         irBuilder_->SetInsertPoint(afterBB);
     }
 
     llvm::orc::ThreadSafeModule CodeGenerator::finalizeModule()
     {
+        irBuilder_->CreateRetVoid();
+
         return {std::move(module_), std::move(llvmContext_)};
     }
 }
