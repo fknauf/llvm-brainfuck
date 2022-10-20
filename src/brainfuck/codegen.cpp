@@ -13,6 +13,7 @@ namespace brainfuck
         module_->setDataLayout(dataLayout);
         irBuilder_ = std::make_unique<llvm::IRBuilder<>>(*llvmContext_);
 
+        zero_ = llvm::ConstantInt::get(*llvmContext_, llvm::APInt(8, 0));
         one_ = llvm::ConstantInt::get(*llvmContext_, llvm::APInt(8, 1));
         memsize_ = llvm::ConstantInt::get(*llvmContext_, llvm::APInt(32, 30000));
         byteType_ = llvm::Type::getInt8Ty(*llvmContext_);
@@ -21,9 +22,14 @@ namespace brainfuck
 
         llvm::FunctionType *putcharType = llvm::FunctionType::get(intType_, {intType_}, false);
         llvm::FunctionType *getcharType = llvm::FunctionType::get(intType_, false);
+        llvm::FunctionType *mainType = llvm::FunctionType::get(llvm::Type::getVoidTy(*llvmContext_), false);
 
         putcharFunc_ = llvm::Function::Create(putcharType, llvm::Function::ExternalLinkage, "putchar", *module_);
         getcharFunc_ = llvm::Function::Create(getcharType, llvm::Function::ExternalLinkage, "getchar", *module_);
+        mainFunc_ = llvm::Function::Create(mainType, llvm::Function::ExternalLinkage, "main", *module_);
+
+        auto entryBlock = llvm::BasicBlock::Create(*llvmContext_, "entry", mainFunc_);
+        irBuilder_->SetInsertPoint(entryBlock);
 
         posMem_ = irBuilder_->CreateAlloca(ptrType_, nullptr, "position");
         globalMem_ = irBuilder_->CreateAlloca(byteType_, memsize_, "memory");
@@ -86,8 +92,24 @@ namespace brainfuck
         irBuilder_->CreateStore(readValue, posValue);
     }
 
-    void CodeGenerator::operator()(LoopAST const &)
+    void CodeGenerator::operator()(LoopAST const &ast)
     {
+        auto loopBB = llvm::BasicBlock::Create(*llvmContext_, "loop", mainFunc_);
+        auto afterBB = llvm::BasicBlock::Create(*llvmContext_, "afterLoop", mainFunc_);
+
+        irBuilder_->CreateBr(loopBB);
+        irBuilder_->SetInsertPoint(loopBB);
+
+        auto posValue = irBuilder_->CreateLoad(ptrType_, posMem_, "loadPos");
+        auto dataValue = irBuilder_->CreateLoad(byteType_, posValue, "loadData");
+        auto loopCondition = irBuilder_->CreateICmpEQ(dataValue, zero_, "loopCond");
+
+        irBuilder_->CreateCondBr(loopCondition, afterBB, loopBB);
+
+        (*this)(ast.loopBody());
+
+        irBuilder_->CreateBr(loopBB);
+        irBuilder_->SetInsertPoint(afterBB);
     }
 
     llvm::orc::ThreadSafeModule CodeGenerator::finalizeModule()
