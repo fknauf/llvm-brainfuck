@@ -20,20 +20,6 @@ namespace
             return false;
         }
     };
-
-    template <typename T, int change>
-    struct ExpectChange
-    {
-        bool operator()(T const &t) const
-        {
-            return t.change() == change;
-        }
-
-        bool operator()(brainfuck::ASTBase const &) const
-        {
-            return false;
-        }
-    };
 }
 
 BOOST_AUTO_TEST_SUITE(parser)
@@ -48,10 +34,10 @@ BOOST_AUTO_TEST_CASE(normalcode)
 
     BOOST_CHECK_EQUAL(7, ast.size());
 
-    BOOST_CHECK(std::visit(ExpectChange<brainfuck::DataChangeAST, 1>(), ast[0]));
-    BOOST_CHECK(std::visit(ExpectChange<brainfuck::DataChangeAST, -1>(), ast[1]));
-    BOOST_CHECK(std::visit(ExpectChange<brainfuck::PositionChangeAST, -1>(), ast[2]));
-    BOOST_CHECK(std::visit(ExpectChange<brainfuck::PositionChangeAST, 1>(), ast[3]));
+    BOOST_CHECK(std::visit(ExpectType<brainfuck::IncrAST>(), ast[0]));
+    BOOST_CHECK(std::visit(ExpectType<brainfuck::DecrAST>(), ast[1]));
+    BOOST_CHECK(std::visit(ExpectType<brainfuck::LeftAST>(), ast[2]));
+    BOOST_CHECK(std::visit(ExpectType<brainfuck::RightAST>(), ast[3]));
     BOOST_CHECK(std::visit(ExpectType<brainfuck::LoopAST>(), ast[4]));
     BOOST_CHECK(std::visit(ExpectType<brainfuck::WriteAST>(), ast[5]));
     BOOST_CHECK(std::visit(ExpectType<brainfuck::ReadAST>(), ast[6]));
@@ -84,10 +70,10 @@ BOOST_AUTO_TEST_CASE(comments_lines)
 
     BOOST_CHECK_EQUAL(7, ast.size());
 
-    BOOST_CHECK(std::visit(ExpectChange<brainfuck::DataChangeAST, 1>(), ast[0]));
-    BOOST_CHECK(std::visit(ExpectChange<brainfuck::DataChangeAST, -1>(), ast[1]));
-    BOOST_CHECK(std::visit(ExpectChange<brainfuck::PositionChangeAST, -1>(), ast[2]));
-    BOOST_CHECK(std::visit(ExpectChange<brainfuck::PositionChangeAST, 1>(), ast[3]));
+    BOOST_CHECK(std::visit(ExpectType<brainfuck::IncrAST>(), ast[0]));
+    BOOST_CHECK(std::visit(ExpectType<brainfuck::DecrAST>(), ast[1]));
+    BOOST_CHECK(std::visit(ExpectType<brainfuck::LeftAST>(), ast[2]));
+    BOOST_CHECK(std::visit(ExpectType<brainfuck::RightAST>(), ast[3]));
     BOOST_CHECK(std::visit(ExpectType<brainfuck::LoopAST>(), ast[4]));
     BOOST_CHECK(std::visit(ExpectType<brainfuck::WriteAST>(), ast[5]));
     BOOST_CHECK(std::visit(ExpectType<brainfuck::ReadAST>(), ast[6]));

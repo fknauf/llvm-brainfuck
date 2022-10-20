@@ -44,16 +44,16 @@ namespace brainfuck
                 switch (lexer.currentToken())
                 {
                 case Lexer::RIGHT:
-                    body.emplace_back(PositionChangeAST(lexer.currentLocation(), 1));
+                    body.emplace_back(RightAST(lexer.currentLocation()));
                     break;
                 case Lexer::LEFT:
-                    body.emplace_back(PositionChangeAST(lexer.currentLocation(), -1));
+                    body.emplace_back(LeftAST(lexer.currentLocation()));
                     break;
                 case Lexer::INCR:
-                    body.emplace_back(DataChangeAST(lexer.currentLocation(), 1));
+                    body.emplace_back(IncrAST(lexer.currentLocation()));
                     break;
                 case Lexer::DECR:
-                    body.emplace_back(DataChangeAST(lexer.currentLocation(), -1));
+                    body.emplace_back(DecrAST(lexer.currentLocation()));
                     break;
                 case Lexer::WRITE:
                     body.emplace_back(WriteAST(lexer.currentLocation()));

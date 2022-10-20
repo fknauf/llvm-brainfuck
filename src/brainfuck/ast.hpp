@@ -20,35 +20,39 @@ namespace brainfuck
         SourceLocation loc_;
     };
 
-    template <int>
-    class TaggedChangeAST : public ASTBase
+    struct LeftAST : public ASTBase
     {
-    public:
-        TaggedChangeAST(SourceLocation const &loc, int change)
-            : ASTBase(loc), change_(change) {}
-
-        int change() const noexcept { return change_; }
-
-    private:
-        int change_;
-    };
-
-    using PositionChangeAST = TaggedChangeAST<0>;
-    using DataChangeAST = TaggedChangeAST<1>;
-
-    template <char>
-    class TaggedEmptyAST : public ASTBase
-    {
-    public:
         using ASTBase::ASTBase;
     };
 
-    using WriteAST = TaggedEmptyAST<'.'>;
-    using ReadAST = TaggedEmptyAST<','>;
+    struct RightAST : public ASTBase
+    {
+        using ASTBase::ASTBase;
+    };
+
+    struct IncrAST : public ASTBase
+    {
+        using ASTBase::ASTBase;
+    };
+
+    struct DecrAST : public ASTBase
+    {
+        using ASTBase::ASTBase;
+    };
+
+    struct WriteAST : public ASTBase
+    {
+        using ASTBase::ASTBase;
+    };
+
+    struct ReadAST : public ASTBase
+    {
+        using ASTBase::ASTBase;
+    };
 
     class LoopAST;
 
-    using AST = std::variant<PositionChangeAST, DataChangeAST, WriteAST, ReadAST, LoopAST>;
+    using AST = std::variant<LeftAST, RightAST, IncrAST, DecrAST, WriteAST, ReadAST, LoopAST>;
 
     class LoopAST : public ASTBase
     {
