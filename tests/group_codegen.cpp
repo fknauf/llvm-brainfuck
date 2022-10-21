@@ -2,6 +2,7 @@
 
 #include "brainfuck/codegen.hpp"
 #include "brainfuck/objcode.hpp"
+#include "brainfuck/optimizer.hpp"
 #include "brainfuck/parser.hpp"
 
 #include <sstream>
@@ -11,7 +12,9 @@ BOOST_AUTO_TEST_SUITE(codegen)
 
 BOOST_AUTO_TEST_CASE(normalcode)
 {
-    std::string source = "[+-<>.,]";
+    std::string source = ">++++++++[<+++++++++>-]<.>++++[<+++++++>-]<+.+++++++..+++.>>++++++[<+++++++>-]<+"
+                         "+.------------.>++++++[<+++++++++>-]<+.<.+++.------.--------.>>>++++[<++++++++>-"
+                         "]<+. --- ---------- ----------.";
     std::istringstream sourceStream(source);
 
     brainfuck::Lexer lexer(sourceStream);
@@ -25,10 +28,29 @@ BOOST_AUTO_TEST_CASE(normalcode)
     auto tsafeModule = codegen.finalizeModule();
     auto module = tsafeModule.getModuleUnlocked();
 
-    module->print(llvm::errs(), nullptr);
+    llvm::outs() << "UNOPTIMIZED\n"
+                    "-----------\n";
 
+    std::error_code ec;
+    llvm::raw_fd_ostream outUnoptimized("module.ir", ec);
+    BOOST_CHECK(!ec);
+    module->print(llvm::outs(), nullptr);
+    module->print(outUnoptimized, nullptr);
     writer.writeModuleToFile("module.o", *module);
     writer.writeModuleToFile("module.asm", *module, llvm::CGFT_AssemblyFile);
+
+    brainfuck::optimizeModule(*module);
+
+    llvm::outs() << "\n"
+                    "OPTIMIZED\n"
+                    "---------\n";
+
+    llvm::raw_fd_ostream outOptimized("module-o2.ir", ec);
+    BOOST_CHECK(!ec);
+    module->print(llvm::outs(), nullptr);
+    module->print(outOptimized, nullptr);
+    writer.writeModuleToFile("module-o2.o", *module);
+    writer.writeModuleToFile("module-o2.asm", *module, llvm::CGFT_AssemblyFile);
 }
 
 BOOST_AUTO_TEST_SUITE_END()

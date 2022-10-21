@@ -4,6 +4,7 @@ add_library(brainfuck
             brainfuck/codegen.cpp
             brainfuck/lexer.cpp
             brainfuck/objcode.cpp
+            brainfuck/optimizer.cpp
             brainfuck/parser.cpp
             brainfuck/source_location.cpp
 )

@@ -35,13 +35,15 @@ namespace brainfuck
         std::unique_ptr<llvm::Module> module_;
         std::unique_ptr<llvm::IRBuilder<>> irBuilder_;
 
-        llvm::Value *zero_ = nullptr;
-        llvm::Value *one_ = nullptr;
+        llvm::Value *byteZero_ = nullptr;
+        llvm::Value *byteOne_ = nullptr;
         llvm::Value *memsize_ = nullptr;
+        llvm::Value *ptrIntOne_ = nullptr;
 
         llvm::Type *byteType_ = nullptr;
         llvm::Type *intType_ = nullptr;
-        llvm::Type *ptrType_ = nullptr;
+        llvm::Type *bytePtrType_ = nullptr;
+        llvm::Type *ptrIntType_ = nullptr;
 
         llvm::Function *putcharFunc_;
         llvm::Function *getcharFunc_;
