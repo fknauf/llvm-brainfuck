@@ -10,3 +10,5 @@ lib
 bin
 *~
 *.asm
+*.ir
+a.out
