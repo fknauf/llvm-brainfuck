@@ -9,7 +9,20 @@
 
 namespace
 {
-    void do_compile(std::istream &in, std::string const &outFileName)
+    void dumpModule(llvm::Module &module, brainfuck::ObjCodeWriter &objWriter, std::string const &fileNameStem)
+    {
+        std::error_code ec;
+        llvm::raw_fd_ostream llOut(fileNameStem + ".ll", ec);
+        if (!ec)
+        {
+            module.print(llOut, nullptr);
+        }
+
+        objWriter.writeModuleToFile(fileNameStem + ".o", module);
+        objWriter.writeModuleToFile(fileNameStem + ".asm", module, llvm::CGFT_AssemblyFile);
+    }
+
+    void do_compile(std::istream &in, std::string const &moduleName)
     {
         brainfuck::Lexer lexer(in);
         brainfuck::ObjCodeWriter objWriter;
@@ -20,9 +33,12 @@ namespace
 
         auto tsModule = codegen.finalizeModule();
         auto &module = *tsModule.getModuleUnlocked();
+
+        dumpModule(module, objWriter, moduleName + "_unoptimized");
+
         brainfuck::optimizeModule(module);
 
-        objWriter.writeModuleToFile(outFileName, module);
+        dumpModule(module, objWriter, moduleName);
     }
 }
 
@@ -30,7 +46,7 @@ int main(int argc, char *argv[])
 {
     if (argc == 0)
     {
-        do_compile(std::cin, "module.o");
+        do_compile(std::cin, "module");
     }
     else
     {
@@ -39,7 +55,7 @@ int main(int argc, char *argv[])
 
         if (in)
         {
-            do_compile(in, fileName + ".o");
+            do_compile(in, fileName);
         }
         else
         {

@@ -10,5 +10,5 @@ lib
 bin
 *~
 *.asm
-*.ir
+*.ll
 a.out

@@ -45,7 +45,7 @@ BOOST_AUTO_TEST_CASE(normalcode)
                     "OPTIMIZED\n"
                     "---------\n";
 
-    llvm::raw_fd_ostream outOptimized("module-o2.ir", ec);
+    llvm::raw_fd_ostream outOptimized("module-o2.ll", ec);
     BOOST_CHECK(!ec);
     module->print(llvm::outs(), nullptr);
     module->print(outOptimized, nullptr);
