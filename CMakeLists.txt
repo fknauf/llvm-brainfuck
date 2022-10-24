@@ -2,12 +2,13 @@ project(llvm-brainfuck)
 
 cmake_minimum_required(VERSION 3.24)
 
-set(CMAKE_BUILD_TYPE Debug)
-set(CMAKE_CXX_COMPILER clang++-14)
-set(CMAKE_CXX_STANDARD 20)
-
+set(USE_LLVM_VERSION "16")
 option(USE_ASAN "use adress sanitizer" on)
 option(USE_STACK_PROTECTOR "use stack protector" on)
+
+set(CMAKE_BUILD_TYPE Debug)
+set(CMAKE_CXX_COMPILER clang++-${USE_LLVM_VERSION})
+set(CMAKE_CXX_STANDARD 20)
 
 add_compile_options(-Wall -Wextra -Werror)
 
