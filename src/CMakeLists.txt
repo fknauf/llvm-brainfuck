@@ -8,3 +8,6 @@ add_library(brainfuck
             brainfuck/parser.cpp
             brainfuck/source_location.cpp
 )
+
+add_executable(bfcompile cli.cpp)
+target_link_libraries(bfcompile brainfuck)
