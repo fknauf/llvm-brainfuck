@@ -32,7 +32,7 @@ BOOST_AUTO_TEST_CASE(normalcode)
                     "-----------\n";
 
     std::error_code ec;
-    llvm::raw_fd_ostream outUnoptimized("module.ir", ec);
+    llvm::raw_fd_ostream outUnoptimized("module.ll", ec);
     BOOST_CHECK(!ec);
     module->print(llvm::outs(), nullptr);
     module->print(outUnoptimized, nullptr);

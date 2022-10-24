@@ -49,13 +49,9 @@ namespace
 
 int main(int argc, char *argv[])
 {
-    if (argc == 0)
+    for (int i = 1; i < argc; ++i)
     {
-        do_compile(std::cin, {});
-    }
-    else
-    {
-        std::string fileName = argv[1];
+        std::string fileName = argv[i];
         std::ifstream in(fileName);
 
         if (in)
