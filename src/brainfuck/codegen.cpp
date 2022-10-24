@@ -15,6 +15,14 @@ namespace brainfuck
                                  std::filesystem::path const &sourceFilePath,
                                  bool shouldEmitDebugInfo)
     {
+        initLlvmInfrastructure(dataLayout, sourceFilePath, shouldEmitDebugInfo);
+        initConstantsAndTypes();
+        initDeclareFunctions();
+        initMainEntry();
+    }
+
+    void CodeGenerator::initLlvmInfrastructure(llvm::DataLayout const &dataLayout, std::filesystem::path const &sourceFilePath, bool shouldEmitDebugInfo)
+    {
         llvmContext_ = std::make_unique<llvm::LLVMContext>();
 
         std::string moduleName = sourceFilePath.empty() ? "anonymousModule" : sourceFilePath.stem();
@@ -33,17 +41,23 @@ namespace brainfuck
             debugInfoFile_ = debugInfoBuilder_->createFile(sourceFileName, sourceFileDir);
             debugInfoCompileUnit_ = debugInfoBuilder_->createCompileUnit(llvm::dwarf::DW_LANG_C, debugInfoFile_, "bfcompile", true, "", 0);
         }
+    }
 
+    void CodeGenerator::initConstantsAndTypes()
+    {
         byteZero_ = llvm::ConstantInt::get(*llvmContext_, llvm::APInt(8, 0));
         byteOne_ = llvm::ConstantInt::get(*llvmContext_, llvm::APInt(8, 1));
         memsize_ = llvm::ConstantInt::get(*llvmContext_, llvm::APInt(64, BRAINFUCK_MEMSIZE));
-        ptrIntOne_ = llvm::ConstantInt::get(*llvmContext_, llvm::APInt(dataLayout.getPointerSizeInBits(), 1));
+        ptrIntOne_ = llvm::ConstantInt::get(*llvmContext_, llvm::APInt(module_->getDataLayout().getPointerSizeInBits(), 1));
 
         byteType_ = llvm::Type::getInt8Ty(*llvmContext_);
         intType_ = llvm::Type::getInt32Ty(*llvmContext_);
         bytePtrType_ = llvm::Type::getInt8PtrTy(*llvmContext_);
         ptrIntType_ = ptrIntOne_->getType();
+    }
 
+    void CodeGenerator::initDeclareFunctions()
+    {
         llvm::FunctionType *putcharType = llvm::FunctionType::get(intType_, {intType_}, false);
         llvm::FunctionType *getcharType = llvm::FunctionType::get(intType_, false);
         llvm::FunctionType *mainType = llvm::FunctionType::get(intType_, false);
@@ -70,7 +84,10 @@ namespace brainfuck
             mainFunc_->setSubprogram(debugMain_);
             irBuilder_->SetCurrentDebugLocation(llvm::DebugLoc());
         }
+    }
 
+    void CodeGenerator::initMainEntry()
+    {
         auto entryBlock = llvm::BasicBlock::Create(*llvmContext_, "entry", mainFunc_);
         irBuilder_->SetInsertPoint(entryBlock);
 
@@ -79,7 +96,6 @@ namespace brainfuck
         irBuilder_->CreateIntrinsic(llvm::Intrinsic::memset,
                                     {bytePtrType_, byteType_, intType_, llvm::Type::getInt1Ty(*llvmContext_)},
                                     {globalMem_, byteZero_, memsize_, llvm::ConstantInt::get(*llvmContext_, llvm::APInt(1, 0))});
-
         irBuilder_->CreateStore(globalMem_, posMem_);
 
         if (debugInfoBuilder_)

@@ -34,6 +34,11 @@ namespace brainfuck
         llvm::orc::ThreadSafeModule finalizeModule();
 
     private:
+        void initLlvmInfrastructure(llvm::DataLayout const &dataLayout, std::filesystem::path const &sourceFilePath, bool shouldEmitDebugInfo);
+        void initConstantsAndTypes();
+        void initDeclareFunctions();
+        void initMainEntry();
+
         void emitDebugLocation(SourceLocation const &loc);
 
         std::unique_ptr<llvm::LLVMContext> llvmContext_;
