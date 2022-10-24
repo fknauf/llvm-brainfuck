@@ -4,10 +4,12 @@
 #include "ast.hpp"
 
 #include <llvm/IR/DataLayout.h>
+#include <llvm/IR/DIBuilder.h>
 #include <llvm/IR/Instructions.h>
 #include <llvm/IR/IRBuilder.h>
 #include <llvm/ExecutionEngine/Orc/ExecutionUtils.h>
 
+#include <filesystem>
 #include <memory>
 
 namespace brainfuck
@@ -16,7 +18,8 @@ namespace brainfuck
     {
     public:
         CodeGenerator(llvm::DataLayout dataLayout = llvm::DataLayout(""),
-                      std::string const &moduleName = "module");
+                      std::filesystem::path const &sourceFilePath = {},
+                      bool shouldEmitDebugInfo_ = false);
 
         void operator()(AST const &ast);
         void operator()(std::vector<AST> const &block);
@@ -31,9 +34,15 @@ namespace brainfuck
         llvm::orc::ThreadSafeModule finalizeModule();
 
     private:
+        void emitDebugLocation(SourceLocation const &loc);
+
         std::unique_ptr<llvm::LLVMContext> llvmContext_;
         std::unique_ptr<llvm::Module> module_;
         std::unique_ptr<llvm::IRBuilder<>> irBuilder_;
+        std::unique_ptr<llvm::DIBuilder> debugInfoBuilder_;
+
+        llvm::DIFile *debugInfoFile_ = nullptr;
+        llvm::DICompileUnit *debugInfoCompileUnit_ = nullptr;
 
         llvm::Value *byteZero_ = nullptr;
         llvm::Value *byteOne_ = nullptr;
@@ -48,6 +57,8 @@ namespace brainfuck
         llvm::Function *putcharFunc_;
         llvm::Function *getcharFunc_;
         llvm::Function *mainFunc_;
+
+        llvm::DISubprogram *debugMain_;
 
         llvm::AllocaInst *posMem_ = nullptr;
         llvm::AllocaInst *globalMem_ = nullptr;

@@ -6,18 +6,37 @@
 
 namespace brainfuck
 {
+    namespace
+    {
+        int const BRAINFUCK_MEMSIZE = 30000;
+    }
 
     CodeGenerator::CodeGenerator(llvm::DataLayout dataLayout,
-                                 std::string const &moduleName)
+                                 std::filesystem::path const &sourceFilePath,
+                                 bool shouldEmitDebugInfo)
     {
         llvmContext_ = std::make_unique<llvm::LLVMContext>();
-        module_ = std::make_unique<llvm::Module>(moduleName, *llvmContext_);
+
+        std::string moduleName = sourceFilePath.empty() ? "anonymousModule" : sourceFilePath.stem();
+        module_ = std::make_unique<llvm::Module>(sourceFilePath.stem().string(), *llvmContext_);
         module_->setDataLayout(dataLayout);
         irBuilder_ = std::make_unique<llvm::IRBuilder<>>(*llvmContext_);
 
+        if (shouldEmitDebugInfo)
+        {
+            module_->addModuleFlag(llvm::Module::Warning, "Debug Info Version", llvm::DEBUG_METADATA_VERSION);
+
+            std::string sourceFileName = sourceFilePath.empty() ? "<stdin>" : sourceFilePath.filename();
+            std::string sourceFileDir = sourceFilePath.empty() ? "." : sourceFilePath.parent_path();
+
+            debugInfoBuilder_ = std::make_unique<llvm::DIBuilder>(*module_);
+            debugInfoFile_ = debugInfoBuilder_->createFile(sourceFileName, sourceFileDir);
+            debugInfoCompileUnit_ = debugInfoBuilder_->createCompileUnit(llvm::dwarf::DW_LANG_C, debugInfoFile_, "bfcompile", true, "", 0);
+        }
+
         byteZero_ = llvm::ConstantInt::get(*llvmContext_, llvm::APInt(8, 0));
         byteOne_ = llvm::ConstantInt::get(*llvmContext_, llvm::APInt(8, 1));
-        memsize_ = llvm::ConstantInt::get(*llvmContext_, llvm::APInt(32, 30000));
+        memsize_ = llvm::ConstantInt::get(*llvmContext_, llvm::APInt(32, BRAINFUCK_MEMSIZE));
         ptrIntOne_ = llvm::ConstantInt::get(*llvmContext_, llvm::APInt(dataLayout.getPointerSizeInBits(), 1));
 
         byteType_ = llvm::Type::getInt8Ty(*llvmContext_);
@@ -33,6 +52,25 @@ namespace brainfuck
         getcharFunc_ = llvm::Function::Create(getcharType, llvm::Function::ExternalLinkage, "getchar", *module_);
         mainFunc_ = llvm::Function::Create(mainType, llvm::Function::ExternalLinkage, "main", *module_);
 
+        if (debugInfoBuilder_)
+        {
+            auto debugIntType = debugInfoBuilder_->createBasicType("int", 32, llvm::dwarf::DW_END_default);
+            auto debugMainArgv = debugInfoBuilder_->getOrCreateTypeArray({debugIntType});
+            auto debugMainType = debugInfoBuilder_->createSubroutineType(debugMainArgv);
+
+            debugMain_ = debugInfoBuilder_->createFunction(debugInfoFile_,
+                                                           mainFunc_->getName(),
+                                                           llvm::StringRef(),
+                                                           debugInfoFile_,
+                                                           1,
+                                                           debugMainType,
+                                                           1,
+                                                           llvm::DINode::FlagPrototyped,
+                                                           llvm::DISubprogram::SPFlagDefinition);
+            mainFunc_->setSubprogram(debugMain_);
+            irBuilder_->SetCurrentDebugLocation(llvm::DebugLoc());
+        }
+
         auto entryBlock = llvm::BasicBlock::Create(*llvmContext_, "entry", mainFunc_);
         irBuilder_->SetInsertPoint(entryBlock);
 
@@ -43,6 +81,24 @@ namespace brainfuck
                                     {globalMem_, byteZero_, memsize_, llvm::ConstantInt::get(*llvmContext_, llvm::APInt(1, 0))});
 
         irBuilder_->CreateStore(globalMem_, posMem_);
+
+        if (debugInfoBuilder_)
+        {
+            auto debugByteType = debugInfoBuilder_->createBasicType("byte", 8, llvm::dwarf::DW_END_default);
+            auto debugBytePtrType = debugInfoBuilder_->createPointerType(debugByteType, 64, posMem_->getAlign().value() * 8);
+            auto subscripts = debugInfoBuilder_->getOrCreateArray({debugInfoBuilder_->getOrCreateSubrange(0, BRAINFUCK_MEMSIZE)});
+            auto debugByteArrayType = debugInfoBuilder_->createArrayType(BRAINFUCK_MEMSIZE, 1, debugByteType, subscripts);
+
+            auto debugPos = debugInfoBuilder_->createAutoVariable(debugMain_, "pos", debugInfoFile_, 1, debugBytePtrType, true);
+            auto debugMem = debugInfoBuilder_->createAutoVariable(debugMain_, "mem", debugInfoFile_, 1, debugByteArrayType, true);
+
+            auto debugLoc = llvm::DILocation::get(debugMain_->getContext(), 1, 0, debugMain_);
+
+            debugInfoBuilder_->insertDeclare(posMem_, debugPos, debugInfoBuilder_->createExpression(), debugLoc, irBuilder_->GetInsertBlock());
+            debugInfoBuilder_->insertDeclare(globalMem_, debugMem, debugInfoBuilder_->createExpression(), debugLoc, irBuilder_->GetInsertBlock());
+
+            irBuilder_->SetCurrentDebugLocation(debugLoc);
+        }
     }
 
     void CodeGenerator::operator()(AST const &ast)
@@ -55,24 +111,30 @@ namespace brainfuck
         std::for_each(begin(block), end(block), std::ref(*this));
     }
 
-    void CodeGenerator::operator()(IncrAST const &)
+    void CodeGenerator::operator()(IncrAST const &ast)
     {
+        emitDebugLocation(ast.location());
+
         auto posValue = irBuilder_->CreateLoad(bytePtrType_, posMem_, "incrPos");
         auto oldValue = irBuilder_->CreateLoad(byteType_, posValue, "incrOld");
         auto newValue = irBuilder_->CreateAdd(oldValue, byteOne_, "incrNew");
         irBuilder_->CreateStore(newValue, posValue);
     }
 
-    void CodeGenerator::operator()(DecrAST const &)
+    void CodeGenerator::operator()(DecrAST const &ast)
     {
+        emitDebugLocation(ast.location());
+
         auto posValue = irBuilder_->CreateLoad(bytePtrType_, posMem_, "decrPos");
         auto oldValue = irBuilder_->CreateLoad(byteType_, posValue, "decrOld");
         auto newValue = irBuilder_->CreateSub(oldValue, byteOne_, "decrNew");
         irBuilder_->CreateStore(newValue, posValue);
     }
 
-    void CodeGenerator::operator()(LeftAST const &)
+    void CodeGenerator::operator()(LeftAST const &ast)
     {
+        emitDebugLocation(ast.location());
+
         auto oldPosPtr = irBuilder_->CreateLoad(bytePtrType_, posMem_, "leftOldPtr");
         auto oldPosInt = irBuilder_->CreatePtrToInt(oldPosPtr, ptrIntType_, "leftOldInt");
         auto newPosInt = irBuilder_->CreateSub(oldPosInt, ptrIntOne_, "leftNewInt");
@@ -80,8 +142,10 @@ namespace brainfuck
         irBuilder_->CreateStore(newPosPtr, posMem_);
     }
 
-    void CodeGenerator::operator()(RightAST const &)
+    void CodeGenerator::operator()(RightAST const &ast)
     {
+        emitDebugLocation(ast.location());
+
         auto oldPosPtr = irBuilder_->CreateLoad(bytePtrType_, posMem_, "rightOldPtr");
         auto oldPosInt = irBuilder_->CreatePtrToInt(oldPosPtr, ptrIntType_, "rightOldInt");
         auto newPosInt = irBuilder_->CreateAdd(oldPosInt, ptrIntOne_, "rightNewInt");
@@ -89,16 +153,20 @@ namespace brainfuck
         irBuilder_->CreateStore(newPosPtr, posMem_);
     }
 
-    void CodeGenerator::operator()(WriteAST const &)
+    void CodeGenerator::operator()(WriteAST const &ast)
     {
+        emitDebugLocation(ast.location());
+
         auto posValue = irBuilder_->CreateLoad(bytePtrType_, posMem_, "writePos");
         auto dataValue = irBuilder_->CreateLoad(byteType_, posValue, "writeVal");
         auto dataInt = irBuilder_->CreateCast(llvm::CastInst::ZExt, dataValue, intType_, "writeCast");
         irBuilder_->CreateCall(putcharFunc_, dataInt, "writeCall");
     }
 
-    void CodeGenerator::operator()(ReadAST const &)
+    void CodeGenerator::operator()(ReadAST const &ast)
     {
+        emitDebugLocation(ast.location());
+
         auto readValue = irBuilder_->CreateCall(getcharFunc_, llvm::None, "readCall");
         auto posValue = irBuilder_->CreateLoad(bytePtrType_, posMem_, "readPos");
         irBuilder_->CreateStore(readValue, posValue);
@@ -106,9 +174,11 @@ namespace brainfuck
 
     void CodeGenerator::operator()(LoopAST const &ast)
     {
+        emitDebugLocation(ast.location());
+
         auto headBB = llvm::BasicBlock::Create(*llvmContext_, "headBlock", mainFunc_);
         auto bodyBB = llvm::BasicBlock::Create(*llvmContext_, "bodyBlock", mainFunc_);
-        auto afterBB = llvm::BasicBlock::Create(*llvmContext_, "afterBlock", mainFunc_);
+        auto afterBB = llvm::BasicBlock::Create(*llvmContext_, "afterBlock");
 
         irBuilder_->CreateBr(headBB);
         irBuilder_->SetInsertPoint(headBB);
@@ -123,16 +193,31 @@ namespace brainfuck
         (*this)(ast.loopBody());
 
         irBuilder_->CreateBr(headBB);
+
+        mainFunc_->getBasicBlockList().push_back(afterBB);
         irBuilder_->SetInsertPoint(afterBB);
     }
 
     llvm::orc::ThreadSafeModule CodeGenerator::finalizeModule()
     {
         irBuilder_->CreateRet(llvm::ConstantInt::get(*llvmContext_, llvm::APInt(32, 0)));
+        if (debugInfoBuilder_)
+        {
+            debugInfoBuilder_->finalize();
+        }
 
         llvm::verifyFunction(*mainFunc_);
         llvm::verifyModule(*module_);
 
         return {std::move(module_), std::move(llvmContext_)};
+    }
+
+    void CodeGenerator::emitDebugLocation(SourceLocation const &loc)
+    {
+        if (debugInfoBuilder_)
+        {
+            auto debugLoc = llvm::DILocation::get(debugMain_->getContext(), loc.line(), loc.column(), debugMain_);
+            irBuilder_->SetCurrentDebugLocation(debugLoc);
+        }
     }
 }
