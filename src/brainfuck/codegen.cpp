@@ -36,7 +36,7 @@ namespace brainfuck
 
         byteZero_ = llvm::ConstantInt::get(*llvmContext_, llvm::APInt(8, 0));
         byteOne_ = llvm::ConstantInt::get(*llvmContext_, llvm::APInt(8, 1));
-        memsize_ = llvm::ConstantInt::get(*llvmContext_, llvm::APInt(32, BRAINFUCK_MEMSIZE));
+        memsize_ = llvm::ConstantInt::get(*llvmContext_, llvm::APInt(64, BRAINFUCK_MEMSIZE));
         ptrIntOne_ = llvm::ConstantInt::get(*llvmContext_, llvm::APInt(dataLayout.getPointerSizeInBits(), 1));
 
         byteType_ = llvm::Type::getInt8Ty(*llvmContext_);
@@ -54,7 +54,7 @@ namespace brainfuck
 
         if (debugInfoBuilder_)
         {
-            auto debugIntType = debugInfoBuilder_->createBasicType("int", 32, llvm::dwarf::DW_END_default);
+            auto debugIntType = debugInfoBuilder_->createBasicType("int", 32, llvm::dwarf::DW_ATE_signed);
             auto debugMainArgv = debugInfoBuilder_->getOrCreateTypeArray({debugIntType});
             auto debugMainType = debugInfoBuilder_->createSubroutineType(debugMainArgv);
 
@@ -62,9 +62,9 @@ namespace brainfuck
                                                            mainFunc_->getName(),
                                                            llvm::StringRef(),
                                                            debugInfoFile_,
-                                                           1,
+                                                           0,
                                                            debugMainType,
-                                                           1,
+                                                           0,
                                                            llvm::DINode::FlagPrototyped,
                                                            llvm::DISubprogram::SPFlagDefinition);
             mainFunc_->setSubprogram(debugMain_);
@@ -84,14 +84,15 @@ namespace brainfuck
 
         if (debugInfoBuilder_)
         {
-            auto debugByteType = debugInfoBuilder_->createBasicType("byte", 8, llvm::dwarf::DW_END_default);
-            auto debugBytePtrType = debugInfoBuilder_->createPointerType(debugByteType, 64, posMem_->getAlign().value() * 8);
-            auto subscripts = debugInfoBuilder_->getOrCreateArray({debugInfoBuilder_->getOrCreateSubrange(0, BRAINFUCK_MEMSIZE)});
-            auto debugByteArrayType = debugInfoBuilder_->createArrayType(BRAINFUCK_MEMSIZE, 1, debugByteType, subscripts);
+            auto debugByteType = debugInfoBuilder_->createBasicType("unsigned char", 8, llvm::dwarf::DW_ATE_unsigned_char);
+            auto debugBytePtrType = debugInfoBuilder_->createPointerType(debugByteType, 64);
+            auto memsizeMD = llvm::ConstantAsMetadata::get(llvm::ConstantInt::getSigned(llvm::Type::getInt64Ty(*llvmContext_), BRAINFUCK_MEMSIZE));
+            auto subscripts = debugInfoBuilder_->getOrCreateSubrange(memsizeMD, nullptr, nullptr, nullptr);
+            auto subscriptsArray = debugInfoBuilder_->getOrCreateArray({subscripts});
+            auto debugByteArrayType = debugInfoBuilder_->createArrayType(BRAINFUCK_MEMSIZE, 1, debugByteType, subscriptsArray);
 
             auto debugPos = debugInfoBuilder_->createAutoVariable(debugMain_, "pos", debugInfoFile_, 1, debugBytePtrType, true);
             auto debugMem = debugInfoBuilder_->createAutoVariable(debugMain_, "mem", debugInfoFile_, 1, debugByteArrayType, true);
-
             auto debugLoc = llvm::DILocation::get(debugMain_->getContext(), 1, 0, debugMain_);
 
             debugInfoBuilder_->insertDeclare(posMem_, debugPos, debugInfoBuilder_->createExpression(), debugLoc, irBuilder_->GetInsertBlock());
