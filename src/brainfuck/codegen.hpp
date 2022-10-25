@@ -41,14 +41,18 @@ namespace brainfuck
 
         void emitDebugLocation(SourceLocation const &loc);
 
+        // LLVM infrastructure
         std::unique_ptr<llvm::LLVMContext> llvmContext_;
         std::unique_ptr<llvm::Module> module_;
         std::unique_ptr<llvm::IRBuilder<>> irBuilder_;
         std::unique_ptr<llvm::DIBuilder> debugInfoBuilder_;
-
         llvm::DIFile *debugInfoFile_ = nullptr;
         llvm::DICompileUnit *debugInfoCompileUnit_ = nullptr;
 
+        // Values and types that are convenient to have around during
+        // code generation. We could get these on the fly from LLVM,
+        // but we always keep using the same few ones over and over,
+        // so it makes sense to cache them.
         llvm::Value *byteZero_ = nullptr;
         llvm::Value *byteOne_ = nullptr;
         llvm::Value *memsize_ = nullptr;
@@ -59,12 +63,14 @@ namespace brainfuck
         llvm::Type *bytePtrType_ = nullptr;
         llvm::Type *ptrIntType_ = nullptr;
 
+        // Declared functions for , and . instructions, and a main
+        // function wrapper for easy linking.
         llvm::Function *putcharFunc_;
         llvm::Function *getcharFunc_;
         llvm::Function *mainFunc_;
-
         llvm::DISubprogram *debugMain_;
 
+        // Data storage for the brainfuck runtime environment.
         llvm::AllocaInst *posMem_ = nullptr;
         llvm::AllocaInst *globalMem_ = nullptr;
     };

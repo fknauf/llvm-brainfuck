@@ -2,7 +2,9 @@
 #define INCLUDED_LLVM_BRAINFUCK_OBJCODE_HPP
 
 #include <llvm/IR/Module.h>
-#include <llvm/MC/TargetRegistry.h>
+#include <llvm/Support/CodeGen.h>
+#include <llvm/Support/Host.h>
+#include <llvm/Support/raw_ostream.h>
 #include <llvm/Target/TargetMachine.h>
 
 #include <memory>
@@ -14,12 +16,7 @@ namespace brainfuck
     class ObjCodeWriter
     {
     public:
-        ObjCodeWriter(llvm::TargetOptions options = {},
-                      llvm::Optional<llvm::Reloc::Model> relocationModel = {},
-                      std::string_view cpu = "generic",
-                      std::string_view features = "");
-
-        ObjCodeWriter(std::string const &targetTriple,
+        ObjCodeWriter(std::string const &targetTriple = llvm::sys::getDefaultTargetTriple(),
                       llvm::TargetOptions options = {},
                       llvm::Optional<llvm::Reloc::Model> relocationModel = {},
                       std::string_view cpu = "generic",

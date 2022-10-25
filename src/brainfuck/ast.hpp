@@ -14,7 +14,7 @@ namespace brainfuck
         ASTBase(SourceLocation const &loc);
         virtual ~ASTBase() = 0;
 
-        SourceLocation const &location() const { return loc_; }
+        auto const &location() const { return loc_; }
 
     private:
         SourceLocation loc_;
@@ -59,7 +59,7 @@ namespace brainfuck
     public:
         LoopAST(SourceLocation const &loc, std::vector<AST> loopBody);
 
-        std::vector<AST> const &loopBody() const { return loopBody_; }
+        auto const &loopBody() const { return loopBody_; }
 
     private:
         std::vector<AST> loopBody_;

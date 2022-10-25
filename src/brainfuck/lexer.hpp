@@ -27,7 +27,7 @@ namespace brainfuck
         Lexer(std::istream &in);
 
         char currentToken() const { return currentToken_; }
-        SourceLocation const &currentLocation() const { return currentLocation_; }
+        auto const &currentLocation() const { return currentLocation_; }
 
         void advance();
 

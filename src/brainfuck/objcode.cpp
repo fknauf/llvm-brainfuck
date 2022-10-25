@@ -1,22 +1,14 @@
 #include "objcode.hpp"
 
 #include <llvm/IR/LegacyPassManager.h>
+#include <llvm/MC/TargetRegistry.h>
 #include <llvm/Support/FileSystem.h>
-#include <llvm/Support/Host.h>
 #include <llvm/Support/TargetSelect.h>
 
 #include <sstream>
 
 namespace brainfuck
 {
-    ObjCodeWriter::ObjCodeWriter(llvm::TargetOptions options,
-                                 llvm::Optional<llvm::Reloc::Model> relocationModel,
-                                 std::string_view cpu,
-                                 std::string_view features)
-        : ObjCodeWriter(llvm::sys::getDefaultTargetTriple(), options, relocationModel, cpu, features)
-    {
-    }
-
     ObjCodeWriter::ObjCodeWriter(std::string const &targetTriple,
                                  llvm::TargetOptions options,
                                  llvm::Optional<llvm::Reloc::Model> relocationModel,
@@ -54,7 +46,10 @@ namespace brainfuck
 
         if (ec)
         {
-            throw std::runtime_error((std::ostringstream{} << "Couldn't open file " << fileName).str());
+            // TODO: Replace with std::format when gcc supports it.
+            std::ostringstream errFmt;
+            errFmt << "Couldn't open file " << fileName;
+            throw std::system_error(ec, errFmt.str());
         }
 
         writeModuleToStream(dest, module, fileType);
