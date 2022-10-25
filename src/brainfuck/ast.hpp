@@ -59,11 +59,6 @@ namespace brainfuck
     public:
         LoopAST(SourceLocation const &loc, std::vector<AST> loopBody);
 
-        LoopAST(LoopAST const &) = delete;
-        LoopAST(LoopAST &&) = default;
-        LoopAST &operator=(LoopAST const &) = delete;
-        LoopAST &operator=(LoopAST &&) = default;
-
         std::vector<AST> const &loopBody() const { return loopBody_; }
 
     private:
