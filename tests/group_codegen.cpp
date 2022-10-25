@@ -5,7 +5,9 @@
 #include "brainfuck/optimizer.hpp"
 #include "brainfuck/parser.hpp"
 
+#include <boost/asio/io_service.hpp>
 #include <boost/process.hpp>
+#include <boost/process/async.hpp>
 
 #include <unistd.h>
 
@@ -18,8 +20,19 @@ BOOST_AUTO_TEST_SUITE(codegen)
 
 namespace
 {
-    void testRunModule(llvm::Module &module, brainfuck::ObjCodeWriter &writer, std::string const &expectedOutput, std::string const &tag)
+    struct TestCommunication
     {
+        std::string prompt;
+        std::string expectedOutput;
+    };
+
+    void testRunModule(llvm::Module &module,
+                       brainfuck::ObjCodeWriter &writer,
+                       TestCommunication const &io,
+                       std::string const &tag)
+    {
+        namespace bp = boost::process;
+
         auto tempPath = std::filesystem::temp_directory_path();
         auto pidStr = std::to_string(getpid());
         auto tempModule = tempPath / (pidStr + "_" + tag + "_module.o");
@@ -27,16 +40,26 @@ namespace
 
         writer.writeModuleToFile(tempModule.string(), module);
 
-        boost::process::child linkerProcess(boost::process::search_path("cc"), tempModule.string(), "-o", tempAout.string());
+        bp::child linkerProcess(bp::search_path("cc"), tempModule.string(), "-o", tempAout.string());
         linkerProcess.wait();
 
-        boost::process::ipstream readerStream;
+        bp::opstream toChild;
+        bp::ipstream fromChild;
         std::ostringstream bufferStream;
-        boost::process::child runnerProcess(tempAout.string(), boost::process::std_out > readerStream);
-        runnerProcess.wait();
+        bp::child runnerProcess(tempAout.string(),
+                                (bp::std_in < toChild),
+                                (bp::std_out > fromChild));
 
-        bufferStream << readerStream.rdbuf();
-        BOOST_CHECK_EQUAL(expectedOutput, bufferStream.str());
+        toChild << io.prompt << std::flush;
+        toChild.pipe().close();
+
+        runnerProcess.wait_for(std::chrono::milliseconds(100));
+        BOOST_CHECK(!runnerProcess.running());
+        runnerProcess.terminate();
+
+        bufferStream << fromChild.rdbuf();
+
+        BOOST_CHECK_EQUAL(io.expectedOutput, bufferStream.str());
 
         std::error_code ec;
 
@@ -47,11 +70,12 @@ namespace
     }
 }
 
-BOOST_AUTO_TEST_CASE(normalcode)
+BOOST_AUTO_TEST_CASE(helloworld)
 {
-    std::string source = ">++++++++[<+++++++++>-]<.>++++[<+++++++>-]<+.+++++++..+++.>>++++++[<+++++++>-]<+"
-                         "+.------------.>++++++[<+++++++++>-]<+.<.+++.------.--------.>>>++++[<++++++++>-"
-                         "]<+.";
+    std::string source = ">++++++++[<+++++++++>-]<.>++++[<+++++++>-"
+                         "]<+.+++++++..+++.>>++++++[<+++++++>-]<++."
+                         "------------.>++++++[<+++++++++>-]<+.<.++"
+                         "+.------.--------.>>>++++[<++++++++>-]<+.";
     std::istringstream sourceStream(source);
 
     brainfuck::Lexer lexer(sourceStream);
@@ -65,9 +89,44 @@ BOOST_AUTO_TEST_CASE(normalcode)
     auto tsafeModule = codegen.finalizeModule();
     auto module = tsafeModule.getModuleUnlocked();
 
-    testRunModule(*module, writer, "Hello, World!", "unoptimized");
+    TestCommunication io{"", "Hello, World!"};
+
+    testRunModule(*module, writer, io, "hello_unoptimized");
     brainfuck::optimizeModule(*module);
-    testRunModule(*module, writer, "Hello, World!", "optimized");
+    testRunModule(*module, writer, io, "hello_optimized");
+}
+
+BOOST_AUTO_TEST_CASE(rot13)
+{
+    std::string source = "-,+[-[>>++++[>+++++"
+                         "+++<-]<+<-[>+>+>-[>"
+                         ">>]<[[>+<-]>>+>]<<<"
+                         "<<-]]>>>[-]+>--[-[<"
+                         "->+++[-]]]<[+++++++"
+                         "+++++<[>-[>+>>]>[+["
+                         "<+>-]>+>>]<<<<<-]>>"
+                         "[<+>-]>[-[-<<[-]>>]"
+                         "<<[<<->>-]>>]<<[<<+"
+                         ">>-]]<[-]<.[-]<-,+]";
+
+    std::istringstream sourceStream(source);
+
+    brainfuck::Lexer lexer(sourceStream);
+    auto ast = brainfuck::parse(lexer);
+
+    brainfuck::ObjCodeWriter writer;
+    brainfuck::CodeGenerator codegen(writer.getDataLayout());
+
+    codegen(ast);
+
+    auto tsafeModule = codegen.finalizeModule();
+    auto module = tsafeModule.getModuleUnlocked();
+
+    TestCommunication io{"Hello\n", "Uryyb\n"};
+
+    testRunModule(*module, writer, io, "rot13_unoptimized");
+    brainfuck::optimizeModule(*module);
+    testRunModule(*module, writer, io, "rot13_optimized");
 }
 
 BOOST_AUTO_TEST_SUITE_END()
