@@ -28,7 +28,7 @@ namespace brainfuck
         ++line_;
     }
 
-    std::ostream &operator<<(std::ostream &out, SourceLocation const &loc)
+    std::ostream &operator<<(std::ostream &out, SourceLocation loc)
     {
         return out << loc.line() << ":" << loc.column();
     }

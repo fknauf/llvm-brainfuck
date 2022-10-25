@@ -5,23 +5,6 @@
 #include <sstream>
 #include <string>
 
-namespace
-{
-    template <typename T>
-    struct ExpectType
-    {
-        bool operator()(T const &) const
-        {
-            return true;
-        }
-
-        bool operator()(brainfuck::ASTBase const &) const
-        {
-            return false;
-        }
-    };
-}
-
 BOOST_AUTO_TEST_SUITE(parser)
 
 BOOST_AUTO_TEST_CASE(normalcode)
@@ -34,13 +17,13 @@ BOOST_AUTO_TEST_CASE(normalcode)
 
     BOOST_CHECK_EQUAL(7, ast.size());
 
-    BOOST_CHECK(std::visit(ExpectType<brainfuck::IncrAST>(), ast[0]));
-    BOOST_CHECK(std::visit(ExpectType<brainfuck::DecrAST>(), ast[1]));
-    BOOST_CHECK(std::visit(ExpectType<brainfuck::LeftAST>(), ast[2]));
-    BOOST_CHECK(std::visit(ExpectType<brainfuck::RightAST>(), ast[3]));
-    BOOST_CHECK(std::visit(ExpectType<brainfuck::LoopAST>(), ast[4]));
-    BOOST_CHECK(std::visit(ExpectType<brainfuck::WriteAST>(), ast[5]));
-    BOOST_CHECK(std::visit(ExpectType<brainfuck::ReadAST>(), ast[6]));
+    BOOST_CHECK(std::holds_alternative<brainfuck::IncrAST>(ast[0]));
+    BOOST_CHECK(std::holds_alternative<brainfuck::DecrAST>(ast[1]));
+    BOOST_CHECK(std::holds_alternative<brainfuck::LeftAST>(ast[2]));
+    BOOST_CHECK(std::holds_alternative<brainfuck::RightAST>(ast[3]));
+    BOOST_CHECK(std::holds_alternative<brainfuck::LoopAST>(ast[4]));
+    BOOST_CHECK(std::holds_alternative<brainfuck::WriteAST>(ast[5]));
+    BOOST_CHECK(std::holds_alternative<brainfuck::ReadAST>(ast[6]));
 
     brainfuck::LoopAST *loop = std::get_if<brainfuck::LoopAST>(&ast[4]);
     BOOST_CHECK(loop);
@@ -70,13 +53,13 @@ BOOST_AUTO_TEST_CASE(comments_lines)
 
     BOOST_CHECK_EQUAL(7, ast.size());
 
-    BOOST_CHECK(std::visit(ExpectType<brainfuck::IncrAST>(), ast[0]));
-    BOOST_CHECK(std::visit(ExpectType<brainfuck::DecrAST>(), ast[1]));
-    BOOST_CHECK(std::visit(ExpectType<brainfuck::LeftAST>(), ast[2]));
-    BOOST_CHECK(std::visit(ExpectType<brainfuck::RightAST>(), ast[3]));
-    BOOST_CHECK(std::visit(ExpectType<brainfuck::LoopAST>(), ast[4]));
-    BOOST_CHECK(std::visit(ExpectType<brainfuck::WriteAST>(), ast[5]));
-    BOOST_CHECK(std::visit(ExpectType<brainfuck::ReadAST>(), ast[6]));
+    BOOST_CHECK(std::holds_alternative<brainfuck::IncrAST>(ast[0]));
+    BOOST_CHECK(std::holds_alternative<brainfuck::DecrAST>(ast[1]));
+    BOOST_CHECK(std::holds_alternative<brainfuck::LeftAST>(ast[2]));
+    BOOST_CHECK(std::holds_alternative<brainfuck::RightAST>(ast[3]));
+    BOOST_CHECK(std::holds_alternative<brainfuck::LoopAST>(ast[4]));
+    BOOST_CHECK(std::holds_alternative<brainfuck::WriteAST>(ast[5]));
+    BOOST_CHECK(std::holds_alternative<brainfuck::ReadAST>(ast[6]));
 
     brainfuck::LoopAST *loop = std::get_if<brainfuck::LoopAST>(&ast[4]);
     BOOST_CHECK(loop);
@@ -102,30 +85,30 @@ BOOST_AUTO_TEST_CASE(nested_loops)
 
     BOOST_CHECK_EQUAL(1, ast.size());
 
-    BOOST_CHECK(std::visit(ExpectType<brainfuck::LoopAST>(), ast[0]));
+    BOOST_CHECK(std::holds_alternative<brainfuck::LoopAST>(ast[0]));
 
     auto outerLoop = std::get_if<brainfuck::LoopAST>(&ast[0]);
     BOOST_CHECK(outerLoop);
 
     BOOST_CHECK_EQUAL(5, outerLoop->loopBody().size());
 
-    BOOST_CHECK(std::visit(ExpectType<brainfuck::WriteAST>(), outerLoop->loopBody()[0]));
-    BOOST_CHECK(std::visit(ExpectType<brainfuck::LoopAST>(), outerLoop->loopBody()[1]));
-    BOOST_CHECK(std::visit(ExpectType<brainfuck::WriteAST>(), outerLoop->loopBody()[2]));
-    BOOST_CHECK(std::visit(ExpectType<brainfuck::LoopAST>(), outerLoop->loopBody()[3]));
-    BOOST_CHECK(std::visit(ExpectType<brainfuck::WriteAST>(), outerLoop->loopBody()[4]));
+    BOOST_CHECK(std::holds_alternative<brainfuck::WriteAST>(outerLoop->loopBody()[0]));
+    BOOST_CHECK(std::holds_alternative<brainfuck::LoopAST>(outerLoop->loopBody()[1]));
+    BOOST_CHECK(std::holds_alternative<brainfuck::WriteAST>(outerLoop->loopBody()[2]));
+    BOOST_CHECK(std::holds_alternative<brainfuck::LoopAST>(outerLoop->loopBody()[3]));
+    BOOST_CHECK(std::holds_alternative<brainfuck::WriteAST>(outerLoop->loopBody()[4]));
 
     auto firstInnerLoop = std::get_if<brainfuck::LoopAST>(&outerLoop->loopBody()[1]);
     BOOST_CHECK(firstInnerLoop);
 
     BOOST_CHECK_EQUAL(1, firstInnerLoop->loopBody().size());
-    BOOST_CHECK(std::visit(ExpectType<brainfuck::WriteAST>(), firstInnerLoop->loopBody()[0]));
+    BOOST_CHECK(std::holds_alternative<brainfuck::WriteAST>(firstInnerLoop->loopBody()[0]));
 
     auto secondInnerLoop = std::get_if<brainfuck::LoopAST>(&outerLoop->loopBody()[3]);
     BOOST_CHECK(secondInnerLoop);
 
     BOOST_CHECK_EQUAL(1, secondInnerLoop->loopBody().size());
-    BOOST_CHECK(std::visit(ExpectType<brainfuck::LoopAST>(), secondInnerLoop->loopBody()[0]));
+    BOOST_CHECK(std::holds_alternative<brainfuck::LoopAST>(secondInnerLoop->loopBody()[0]));
 
     auto innerInnerLoop = std::get_if<brainfuck::LoopAST>(&secondInnerLoop->loopBody()[0]);
     BOOST_CHECK(innerInnerLoop);

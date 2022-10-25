@@ -39,7 +39,7 @@ namespace brainfuck
         void initDeclareFunctions();
         void initMainEntry();
 
-        void emitDebugLocation(SourceLocation const &loc);
+        void emitDebugLocation(SourceLocation loc);
 
         // LLVM infrastructure
         std::unique_ptr<llvm::LLVMContext> llvmContext_;

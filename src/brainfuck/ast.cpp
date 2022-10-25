@@ -2,15 +2,8 @@
 
 namespace brainfuck
 {
-    ASTBase::ASTBase(SourceLocation const &loc)
-        : loc_(loc)
-    {
-    }
-
-    ASTBase::~ASTBase() {}
-
-    LoopAST::LoopAST(SourceLocation const &loc, std::vector<AST> loopBody)
-        : ASTBase(loc),
+    LoopAST::LoopAST(SourceLocation loc, std::vector<AST> loopBody)
+        : loc_(loc),
           loopBody_(std::move(loopBody))
     {
     }

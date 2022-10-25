@@ -1,6 +1,7 @@
 #ifndef INCLUDED_LLVM_BRAINFUCK_AST_HPP
 #define INCLUDED_LLVM_BRAINFUCK_AST_HPP
 
+#include "token.hpp"
 #include "source_location.hpp"
 
 #include <variant>
@@ -8,60 +9,39 @@
 
 namespace brainfuck
 {
-    class ASTBase
+    template <Token opcode>
+    class SimpleAST
     {
     public:
-        ASTBase(SourceLocation const &loc);
-        virtual ~ASTBase() = 0;
+        SimpleAST(SourceLocation loc = {}) : loc_(loc) {}
 
-        auto const &location() const { return loc_; }
+        auto location() const { return loc_; }
 
     private:
         SourceLocation loc_;
     };
 
-    struct LeftAST : public ASTBase
-    {
-        using ASTBase::ASTBase;
-    };
-
-    struct RightAST : public ASTBase
-    {
-        using ASTBase::ASTBase;
-    };
-
-    struct IncrAST : public ASTBase
-    {
-        using ASTBase::ASTBase;
-    };
-
-    struct DecrAST : public ASTBase
-    {
-        using ASTBase::ASTBase;
-    };
-
-    struct WriteAST : public ASTBase
-    {
-        using ASTBase::ASTBase;
-    };
-
-    struct ReadAST : public ASTBase
-    {
-        using ASTBase::ASTBase;
-    };
+    using LeftAST = SimpleAST<Token::LEFT>;
+    using RightAST = SimpleAST<Token::RIGHT>;
+    using IncrAST = SimpleAST<Token::INCR>;
+    using DecrAST = SimpleAST<Token::DECR>;
+    using WriteAST = SimpleAST<Token::WRITE>;
+    using ReadAST = SimpleAST<Token::READ>;
 
     class LoopAST;
 
     using AST = std::variant<LeftAST, RightAST, IncrAST, DecrAST, WriteAST, ReadAST, LoopAST>;
 
-    class LoopAST : public ASTBase
+    class LoopAST
     {
     public:
-        LoopAST(SourceLocation const &loc, std::vector<AST> loopBody);
+        LoopAST(SourceLocation loc, std::vector<AST> loopBody);
 
         auto const &loopBody() const { return loopBody_; }
+        auto location() const { return loc_; }
 
     private:
+        SourceLocation loc_;
         std::vector<AST> loopBody_;
     };
 

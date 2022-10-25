@@ -6,7 +6,7 @@
 
 namespace brainfuck
 {
-    class SourceLocation
+    class SourceLocation final
     {
     public:
         SourceLocation(int line = 1, int column = 0);
@@ -24,7 +24,7 @@ namespace brainfuck
         int column_;
     };
 
-    std::ostream &operator<<(std::ostream &out, SourceLocation const &loc);
+    std::ostream &operator<<(std::ostream &out, SourceLocation loc);
 }
 
 #endif

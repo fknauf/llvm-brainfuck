@@ -14,14 +14,23 @@ BOOST_AUTO_TEST_CASE(normalcode)
 
     brainfuck::Lexer lexer(sourceStream);
 
-    for (char c : source)
-    {
-        BOOST_CHECK_EQUAL(c, lexer.currentToken());
-
-        lexer.advance();
-    }
-
-    BOOST_CHECK_EQUAL(brainfuck::Lexer::END_OF_FILE, lexer.currentToken());
+    BOOST_CHECK_EQUAL(brainfuck::Token::INCR, lexer.currentToken());
+    lexer.advance();
+    BOOST_CHECK_EQUAL(brainfuck::Token::DECR, lexer.currentToken());
+    lexer.advance();
+    BOOST_CHECK_EQUAL(brainfuck::Token::LEFT, lexer.currentToken());
+    lexer.advance();
+    BOOST_CHECK_EQUAL(brainfuck::Token::RIGHT, lexer.currentToken());
+    lexer.advance();
+    BOOST_CHECK_EQUAL(brainfuck::Token::LOOP_START, lexer.currentToken());
+    lexer.advance();
+    BOOST_CHECK_EQUAL(brainfuck::Token::LOOP_END, lexer.currentToken());
+    lexer.advance();
+    BOOST_CHECK_EQUAL(brainfuck::Token::WRITE, lexer.currentToken());
+    lexer.advance();
+    BOOST_CHECK_EQUAL(brainfuck::Token::READ, lexer.currentToken());
+    lexer.advance();
+    BOOST_CHECK(brainfuck::Token::END_OF_FILE == lexer.currentToken());
 }
 
 BOOST_AUTO_TEST_SUITE_END()

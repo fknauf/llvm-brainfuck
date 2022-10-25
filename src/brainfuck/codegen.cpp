@@ -195,6 +195,7 @@ namespace brainfuck
 
         auto headBB = llvm::BasicBlock::Create(*llvmContext_, "headBlock", mainFunc_);
         auto bodyBB = llvm::BasicBlock::Create(*llvmContext_, "bodyBlock", mainFunc_);
+        // afterBB will be
         auto afterBB = llvm::BasicBlock::Create(*llvmContext_, "afterBlock");
 
         irBuilder_->CreateBr(headBB);
@@ -229,7 +230,7 @@ namespace brainfuck
         return {std::move(module_), std::move(llvmContext_)};
     }
 
-    void CodeGenerator::emitDebugLocation(SourceLocation const &loc)
+    void CodeGenerator::emitDebugLocation(SourceLocation loc)
     {
         if (debugInfoBuilder_)
         {

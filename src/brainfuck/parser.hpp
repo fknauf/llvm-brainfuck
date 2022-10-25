@@ -12,7 +12,7 @@ namespace brainfuck
     class ParseError : public std::runtime_error
     {
     public:
-        ParseError(SourceLocation const &loc, std::string_view errMsg);
+        ParseError(SourceLocation loc, std::string_view errMsg);
     };
 
     std::vector<AST> parse(Lexer &lexer);

@@ -6,6 +6,7 @@ add_library(brainfuck
             brainfuck/optimizer.cpp
             brainfuck/parser.cpp
             brainfuck/source_location.cpp
+            brainfuck/token.cpp
 )
 target_include_directories(brainfuck SYSTEM BEFORE PUBLIC /usr/lib/llvm-${USE_LLVM_VERSION}/include)
 target_link_libraries(brainfuck LLVM-${USE_LLVM_VERSION})

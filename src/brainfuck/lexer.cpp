@@ -6,7 +6,14 @@ namespace brainfuck
 {
     Lexer::Lexer(std::istream &in)
         : in_{in},
-          meaningfulTokens{LEFT, RIGHT, INCR, DECR, WRITE, READ, LOOP_START, LOOP_END}
+          meaningfulTokens{{{'<', Token::LEFT},
+                            {'>', Token::RIGHT},
+                            {'+', Token::INCR},
+                            {'-', Token::DECR},
+                            {'.', Token::WRITE},
+                            {',', Token::READ},
+                            {'[', Token::LOOP_START},
+                            {']', Token::LOOP_END}}}
     {
         advance();
     }
@@ -15,19 +22,20 @@ namespace brainfuck
     {
         char c;
 
-        while (in_.get(c) && !meaningfulTokens.contains(c))
+        while (in_.get(c))
         {
             currentLocation_.advance(c);
+
+            auto it = meaningfulTokens.find(c);
+            if (it != meaningfulTokens.end())
+            {
+                currentToken_ = it->second;
+                return;
+            }
+
+            continue;
         }
 
-        if (in_)
-        {
-            currentLocation_.advance(c);
-            currentToken_ = c;
-        }
-        else
-        {
-            currentToken_ = END_OF_FILE;
-        }
+        currentToken_ = Token::END_OF_FILE;
     }
 }

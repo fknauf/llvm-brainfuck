@@ -2,40 +2,32 @@
 #define INCLUDED_LLVM_BRAINFUCK_LEXER_HPP
 
 #include "source_location.hpp"
+#include "token.hpp"
 
 #include <istream>
-#include <unordered_set>
+#include <unordered_map>
 
 namespace brainfuck
 {
     class Lexer
     {
     public:
-        enum
-        {
-            END_OF_FILE = '\0',
-            LEFT = '<',
-            RIGHT = '>',
-            INCR = '+',
-            DECR = '-',
-            WRITE = '.',
-            READ = ',',
-            LOOP_START = '[',
-            LOOP_END = ']'
-        };
-
         Lexer(std::istream &in);
+        Lexer(Lexer const &) = delete;
+        Lexer(Lexer &&) = delete;
+        Lexer &operator=(Lexer const &) = delete;
+        Lexer &operator=(Lexer &&) = delete;
 
-        char currentToken() const { return currentToken_; }
-        auto const &currentLocation() const { return currentLocation_; }
+        Token currentToken() const { return currentToken_; }
+        auto currentLocation() const { return currentLocation_; }
 
         void advance();
 
     private:
         std::istream &in_;
-        std::unordered_set<char> const meaningfulTokens;
+        std::unordered_map<char, Token> const meaningfulTokens;
 
-        char currentToken_;
+        Token currentToken_;
         SourceLocation currentLocation_;
     };
 }
