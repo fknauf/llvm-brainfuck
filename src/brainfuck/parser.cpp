@@ -2,12 +2,13 @@
 #include "source_location.hpp"
 
 #include <cassert>
+#include <sstream>
 
 namespace brainfuck
 {
     namespace
     {
-        void expectToken(Lexer &lexer, char expected, std::string const &errMsg)
+        void expectToken(Lexer &lexer, char expected, std::string_view errMsg)
         {
             if (lexer.currentToken() != expected)
             {
@@ -75,8 +76,8 @@ namespace brainfuck
         }
     }
 
-    ParseError::ParseError(SourceLocation const &loc, std::string const &errMsg)
-        : runtime_error(to_string(loc) + " " + errMsg)
+    ParseError::ParseError(SourceLocation const &loc, std::string_view errMsg)
+        : runtime_error((std::ostringstream{} << loc << " " << errMsg).str())
     {
     }
 

@@ -32,11 +32,4 @@ namespace brainfuck
     {
         return out << loc.line() << ":" << loc.column();
     }
-
-    std::string to_string(SourceLocation const &loc)
-    {
-        std::ostringstream fmt;
-        fmt << loc;
-        return fmt.str();
-    }
 }

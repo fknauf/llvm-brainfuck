@@ -7,6 +7,7 @@
 
 #include <memory>
 #include <stdexcept>
+#include <string_view>
 
 namespace brainfuck
 {
@@ -15,18 +16,18 @@ namespace brainfuck
     public:
         ObjCodeWriter(llvm::TargetOptions options = {},
                       llvm::Optional<llvm::Reloc::Model> relocationModel = {},
-                      std::string const &cpu = "generic",
-                      std::string const &features = "");
+                      std::string_view cpu = "generic",
+                      std::string_view features = "");
 
         ObjCodeWriter(std::string const &targetTriple,
                       llvm::TargetOptions options = {},
                       llvm::Optional<llvm::Reloc::Model> relocationModel = {},
-                      std::string const &cpu = "generic",
-                      std::string const &features = "");
+                      std::string_view cpu = "generic",
+                      std::string_view features = "");
 
         auto getDataLayout() const { return targetMachine_->createDataLayout(); }
 
-        void writeModuleToFile(std::string const &filename,
+        void writeModuleToFile(std::string_view filename,
                                llvm::Module &module,
                                llvm::CodeGenFileType fileType = llvm::CGFT_ObjectFile);
 

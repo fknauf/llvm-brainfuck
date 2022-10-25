@@ -5,13 +5,14 @@
 #include "lexer.hpp"
 
 #include <stdexcept>
+#include <string_view>
 
 namespace brainfuck
 {
     class ParseError : public std::runtime_error
     {
     public:
-        ParseError(SourceLocation const &loc, std::string const &errMsg);
+        ParseError(SourceLocation const &loc, std::string_view errMsg);
     };
 
     std::vector<AST> parse(Lexer &lexer);

@@ -25,7 +25,6 @@ namespace brainfuck
     };
 
     std::ostream &operator<<(std::ostream &out, SourceLocation const &loc);
-    std::string to_string(SourceLocation const &loc);
 }
 
 #endif

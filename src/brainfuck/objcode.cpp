@@ -5,12 +5,14 @@
 #include <llvm/Support/Host.h>
 #include <llvm/Support/TargetSelect.h>
 
+#include <sstream>
+
 namespace brainfuck
 {
     ObjCodeWriter::ObjCodeWriter(llvm::TargetOptions options,
                                  llvm::Optional<llvm::Reloc::Model> relocationModel,
-                                 std::string const &cpu,
-                                 std::string const &features)
+                                 std::string_view cpu,
+                                 std::string_view features)
         : ObjCodeWriter(llvm::sys::getDefaultTargetTriple(), options, relocationModel, cpu, features)
     {
     }
@@ -18,8 +20,8 @@ namespace brainfuck
     ObjCodeWriter::ObjCodeWriter(std::string const &targetTriple,
                                  llvm::TargetOptions options,
                                  llvm::Optional<llvm::Reloc::Model> relocationModel,
-                                 std::string const &cpu,
-                                 std::string const &features)
+                                 std::string_view cpu,
+                                 std::string_view features)
     {
         llvm::InitializeAllTargetInfos();
         llvm::InitializeAllTargets();
@@ -43,7 +45,7 @@ namespace brainfuck
         }
     }
 
-    void ObjCodeWriter::writeModuleToFile(std::string const &fileName,
+    void ObjCodeWriter::writeModuleToFile(std::string_view fileName,
                                           llvm::Module &module,
                                           llvm::CodeGenFileType fileType)
     {
@@ -52,7 +54,7 @@ namespace brainfuck
 
         if (ec)
         {
-            throw std::runtime_error("Couldn't open file " + fileName);
+            throw std::runtime_error((std::ostringstream{} << "Couldn't open file " << fileName).str());
         }
 
         writeModuleToStream(dest, module, fileType);
