@@ -11,7 +11,7 @@ namespace brainfuck
 {
     ObjCodeWriter::ObjCodeWriter(std::string const &targetTriple,
                                  llvm::TargetOptions options,
-                                 llvm::Optional<llvm::Reloc::Model> relocationModel,
+                                 std::optional<llvm::Reloc::Model> relocationModel,
                                  std::string_view cpu,
                                  std::string_view features)
     {

@@ -184,7 +184,7 @@ namespace brainfuck
     {
         emitDebugLocation(ast.location());
 
-        auto readValue = irBuilder_->CreateCall(getcharFunc_, llvm::None, "readCall");
+        auto readValue = irBuilder_->CreateCall(getcharFunc_, std::nullopt, "readCall");
         auto posValue = irBuilder_->CreateLoad(bytePtrType_, posMem_, "readPos");
         irBuilder_->CreateStore(readValue, posValue);
     }
@@ -212,7 +212,7 @@ namespace brainfuck
 
         irBuilder_->CreateBr(headBB);
 
-        mainFunc_->getBasicBlockList().push_back(afterBB);
+        mainFunc_->insert(mainFunc_->end(), afterBB);
         irBuilder_->SetInsertPoint(afterBB);
     }
 

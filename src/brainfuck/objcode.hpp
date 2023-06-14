@@ -18,7 +18,7 @@ namespace brainfuck
     public:
         ObjCodeWriter(std::string const &targetTriple = llvm::sys::getDefaultTargetTriple(),
                       llvm::TargetOptions options = {},
-                      llvm::Optional<llvm::Reloc::Model> relocationModel = {},
+                      std::optional<llvm::Reloc::Model> relocationModel = {},
                       std::string_view cpu = "generic",
                       std::string_view features = "");
 

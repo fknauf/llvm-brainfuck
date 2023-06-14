@@ -6,14 +6,14 @@ namespace brainfuck
 {
     Lexer::Lexer(std::istream &in)
         : in_{in},
-          meaningfulTokens{{{'<', Token::LEFT},
-                            {'>', Token::RIGHT},
-                            {'+', Token::INCR},
-                            {'-', Token::DECR},
-                            {'.', Token::WRITE},
-                            {',', Token::READ},
-                            {'[', Token::LOOP_START},
-                            {']', Token::LOOP_END}}}
+          meaningfulTokens{{{'<', Token::left},
+                            {'>', Token::right},
+                            {'+', Token::incr},
+                            {'-', Token::decr},
+                            {'.', Token::write},
+                            {',', Token::read},
+                            {'[', Token::loop_start},
+                            {']', Token::loop_end}}}
     {
         advance();
     }
@@ -36,6 +36,6 @@ namespace brainfuck
             continue;
         }
 
-        currentToken_ = Token::END_OF_FILE;
+        currentToken_ = Token::end_of_file;
     }
 }

@@ -21,12 +21,12 @@ namespace brainfuck
         SourceLocation loc_;
     };
 
-    using LeftAST = SimpleAST<Token::LEFT>;
-    using RightAST = SimpleAST<Token::RIGHT>;
-    using IncrAST = SimpleAST<Token::INCR>;
-    using DecrAST = SimpleAST<Token::DECR>;
-    using WriteAST = SimpleAST<Token::WRITE>;
-    using ReadAST = SimpleAST<Token::READ>;
+    using LeftAST = SimpleAST<Token::left>;
+    using RightAST = SimpleAST<Token::right>;
+    using IncrAST = SimpleAST<Token::incr>;
+    using DecrAST = SimpleAST<Token::decr>;
+    using WriteAST = SimpleAST<Token::write>;
+    using ReadAST = SimpleAST<Token::read>;
 
     class LoopAST;
 

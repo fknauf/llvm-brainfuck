@@ -14,23 +14,23 @@ BOOST_AUTO_TEST_CASE(normalcode)
 
     brainfuck::Lexer lexer(sourceStream);
 
-    BOOST_CHECK_EQUAL(brainfuck::Token::INCR, lexer.currentToken());
+    BOOST_CHECK_EQUAL(brainfuck::Token::incr, lexer.currentToken());
     lexer.advance();
-    BOOST_CHECK_EQUAL(brainfuck::Token::DECR, lexer.currentToken());
+    BOOST_CHECK_EQUAL(brainfuck::Token::decr, lexer.currentToken());
     lexer.advance();
-    BOOST_CHECK_EQUAL(brainfuck::Token::LEFT, lexer.currentToken());
+    BOOST_CHECK_EQUAL(brainfuck::Token::left, lexer.currentToken());
     lexer.advance();
-    BOOST_CHECK_EQUAL(brainfuck::Token::RIGHT, lexer.currentToken());
+    BOOST_CHECK_EQUAL(brainfuck::Token::right, lexer.currentToken());
     lexer.advance();
-    BOOST_CHECK_EQUAL(brainfuck::Token::LOOP_START, lexer.currentToken());
+    BOOST_CHECK_EQUAL(brainfuck::Token::loop_start, lexer.currentToken());
     lexer.advance();
-    BOOST_CHECK_EQUAL(brainfuck::Token::LOOP_END, lexer.currentToken());
+    BOOST_CHECK_EQUAL(brainfuck::Token::loop_end, lexer.currentToken());
     lexer.advance();
-    BOOST_CHECK_EQUAL(brainfuck::Token::WRITE, lexer.currentToken());
+    BOOST_CHECK_EQUAL(brainfuck::Token::write, lexer.currentToken());
     lexer.advance();
-    BOOST_CHECK_EQUAL(brainfuck::Token::READ, lexer.currentToken());
+    BOOST_CHECK_EQUAL(brainfuck::Token::read, lexer.currentToken());
     lexer.advance();
-    BOOST_CHECK(brainfuck::Token::END_OF_FILE == lexer.currentToken());
+    BOOST_CHECK(brainfuck::Token::end_of_file == lexer.currentToken());
 }
 
 BOOST_AUTO_TEST_SUITE_END()

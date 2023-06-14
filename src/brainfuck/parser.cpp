@@ -24,11 +24,11 @@ namespace brainfuck
         {
             SourceLocation loopStart = lexer.currentLocation();
 
-            expectToken(lexer, Token::LOOP_START, "Expected [ at start of loop");
+            expectToken(lexer, Token::loop_start, "Expected [ at start of loop");
 
             auto loopBody = parseLoopBody(lexer);
 
-            if (lexer.currentToken() != Token::LOOP_END)
+            if (lexer.currentToken() != Token::loop_end)
             {
                 throw ParseError(lexer.currentLocation(), "Expected ] at end of loop");
             }
@@ -40,29 +40,29 @@ namespace brainfuck
         {
             std::vector<AST> body;
 
-            while (lexer.currentToken() != Token::END_OF_FILE && lexer.currentToken() != Token::LOOP_END)
+            while (lexer.currentToken() != Token::end_of_file && lexer.currentToken() != Token::loop_end)
             {
                 switch (lexer.currentToken())
                 {
-                case Token::RIGHT:
+                case Token::right:
                     body.emplace_back(RightAST(lexer.currentLocation()));
                     break;
-                case Token::LEFT:
+                case Token::left:
                     body.emplace_back(LeftAST(lexer.currentLocation()));
                     break;
-                case Token::INCR:
+                case Token::incr:
                     body.emplace_back(IncrAST(lexer.currentLocation()));
                     break;
-                case Token::DECR:
+                case Token::decr:
                     body.emplace_back(DecrAST(lexer.currentLocation()));
                     break;
-                case Token::WRITE:
+                case Token::write:
                     body.emplace_back(WriteAST(lexer.currentLocation()));
                     break;
-                case Token::READ:
+                case Token::read:
                     body.emplace_back(ReadAST(lexer.currentLocation()));
                     break;
-                case Token::LOOP_START:
+                case Token::loop_start:
                     body.emplace_back(parseLoop(lexer));
                     break;
                 default:
@@ -86,7 +86,7 @@ namespace brainfuck
     {
         std::vector<AST> mainProgram = parseLoopBody(lexer);
 
-        expectToken(lexer, Token::END_OF_FILE, "unmatched ]");
+        expectToken(lexer, Token::end_of_file, "unmatched ]");
 
         return mainProgram;
     }
